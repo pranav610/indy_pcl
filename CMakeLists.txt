@@ -217,11 +217,36 @@ include_directories(
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
-add_executable (indy_pcl src/indy_pcl.cpp)
+
+add_executable (createbag src/createbag.cpp)
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
-target_link_libraries(indy_pcl ${catkin_LIBRARIES})
-target_link_libraries (indy_pcl ${PCL_LIBRARIES})
+target_link_libraries(createbag ${catkin_LIBRARIES})
+target_link_libraries (createbag ${PCL_LIBRARIES})
+
+add_executable(down_sample src/down_sample.cpp)
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
+target_link_libraries(down_sample ${catkin_LIBRARIES})
+target_link_libraries (down_sample ${PCL_LIBRARIES})
+
+add_executable (ICP src/ICP.cpp)
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
+target_link_libraries (ICP ${PCL_LIBRARIES})
+target_link_libraries (ICP ${catkin_LIBRARIES})
+
+add_executable (mergedmap src/mergedmap.cpp)
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
+target_link_libraries(mergedmap ${catkin_LIBRARIES})
+target_link_libraries (mergedmap ${PCL_LIBRARIES})
+
+add_executable(noisy_data src/noisy_data.cpp)
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
+target_link_libraries(noisy_data ${catkin_LIBRARIES})
+target_link_libraries (noisy_data ${PCL_LIBRARIES})
 
 
 
