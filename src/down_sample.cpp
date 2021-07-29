@@ -11,14 +11,14 @@ int main()
   // Fill in the cloud data
   pcl::PCDReader reader;
   // Replace the path below with the path where you saved your file
-  reader.read("MergedMap.pcd", *cloud);
+  reader.read("/home/pranav/catkin_ws/src/MergedMap.pcd", *cloud);
 
   std::cerr << "PointCloud before filtering: " << cloud->width * cloud->height << " data points (" << pcl::getFieldsList(*cloud) << ")." << std::endl;
 
   // Create the filtering object
   pcl::VoxelGrid<pcl::PCLPointCloud2> sor;
   sor.setInputCloud(cloud);
-  sor.setLeafSize(0.1f, 0.1f, 0.1f);
+  sor.setLeafSize(0.3f, 0.3f, 0.3f);
   sor.filter(*cloud_filtered);
 
   std::cerr << "PointCloud after filtering: " << cloud_filtered->width * cloud_filtered->height << " data points (" << pcl::getFieldsList(*cloud_filtered) << ")." << std::endl;

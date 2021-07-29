@@ -42,7 +42,7 @@ float resolution = 30.0f; //min voxel size for ict tree
 pcl::octree::OctreePointCloudSearch<pcl::PointXYZ> octree(resolution);
 
 int count = 0;
-int iterations = 1000;
+int iterations = 200;
 float radius = 30.0f;
 
 void Callback(const nav_msgs::Odometry::ConstPtr &odom, const sensor_msgs::PointCloud2::ConstPtr &pcl_msg, const geometry_msgs::TransformStamped::ConstPtr &tf_msg)
@@ -98,11 +98,14 @@ void Callback(const nav_msgs::Odometry::ConstPtr &odom, const sensor_msgs::Point
   ROS_INFO("Publissing Done");
 
   Eigen::Matrix4f transformation = icp.getFinalTransformation();
+  //transformation = transformation.inverse(); 
   Eigen::Matrix3f mat; //rotation matrix
   Eigen::Vector3f trans; //translation vector
   
   ROS_INFO("Transformation Given By ICP is,");
-  ROS_INFO("%f %f %f",transformation(0,3),transformation(1,3),transformation(2,3));
+  ROS_INFO("%f %f %f",(transformation.inverse())(0,3),(transformation.inverse())(1,3),(transformation.inverse())(2,3));
+  ROS_INFO("Transformation Given By tf is,");
+  ROS_INFO("%f %f %f",tf_msg->transform.translation.x,tf_msg->transform.translation.y,tf_msg->transform.translation.z);
   
   //Eigen::Isometry3d temp_matrix;
   Eigen::Matrix4f ground_truth;
@@ -113,13 +116,14 @@ void Callback(const nav_msgs::Odometry::ConstPtr &odom, const sensor_msgs::Point
   quats.x()=tf_msg->transform.rotation.x;
   quats.y()=tf_msg->transform.rotation.y;
   quats.z()=tf_msg->transform.rotation.z;
+  quats.w()=tf_msg->transform.rotation.w;
 
   Eigen::Matrix3f R = (quats.normalized()).toRotationMatrix();
   
   for(int i=0; i<4; i++){
     for(int j=0; j<3; j++){
       if(i==3){
-        ground_truth(i,j) = 0;
+        ground_truth(i,j) = 0.00;
       }else{
         ground_truth(i,j) = R(i,j);
       }
@@ -133,7 +137,7 @@ void Callback(const nav_msgs::Odometry::ConstPtr &odom, const sensor_msgs::Point
 
   Eigen::Matrix4f error;
 
-  error = (ground_truth)*(transformation.inverse());
+  error = (ground_truth)*(transformation);
   
   ROS_INFO("Error Matrix is,");
   ROS_INFO_STREAM(error);
@@ -145,7 +149,7 @@ void Callback(const nav_msgs::Odometry::ConstPtr &odom, const sensor_msgs::Point
 int main(int argc, char **argv)
 {
 
-  if (pcl::io::loadPCDFile<pcl::PointXYZ>("/home/pranav/catkin_ws/src/indy_pcl/MergedMap_downsampled.pcd", *(merged)) == -1) // load the file
+  if (pcl::io::loadPCDFile<pcl::PointXYZ>("/home/pranav/catkin_ws/src/MergedMap_downsampled.pcd", *(merged)) == -1) // load the file
   {
     PCL_ERROR("Couldn't read file MergedMap_downsampled.pcd \n");
     return (-1);

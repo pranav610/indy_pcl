@@ -16,19 +16,27 @@ using namespace message_filters;
 typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
 PointCloud merged;
 int count = 0;
+int left = 0;
 
 void callback(const sensor_msgs::PointCloud2::ConstPtr &msg2, const geometry_msgs::TransformStamped::ConstPtr &msg1)
 {
   geometry_msgs::Transform temp_tf = msg1->transform;
   sensor_msgs::PointCloud2 msg;
-    
-  pcl_ros::transformPointCloud("map", temp_tf, *msg2, msg);
-  PointCloud::Ptr temp_cloud (new PointCloud);
-  pcl::fromROSMsg(msg,*temp_cloud);
 
-  merged += (*temp_cloud);
+  pcl_ros::transformPointCloud("map", temp_tf, *msg2, msg);
   count++;
-  ROS_INFO("Transformed %d point clouds.", count);
+  PointCloud::Ptr temp_cloud(new PointCloud);
+  pcl::fromROSMsg(msg, *temp_cloud);
+  if (count <= 170 || count >= 190)
+  {
+    merged += (*temp_cloud);
+    ROS_INFO("Added %d transforms.", count - left);
+  }
+  else
+  {
+    left++;
+    ROS_INFO("Left %d transforms.", left);
+  }
 }
 
 int main(int argc, char **argv)
@@ -37,8 +45,8 @@ int main(int argc, char **argv)
 
   ros::NodeHandle nh_mergedmap;
 
-  message_filters::Subscriber<sensor_msgs::PointCloud2> pcl_sub(nh_mergedmap, "/carla/vehicle/086/lidar/front/point_cloud", 1);
-  message_filters::Subscriber<geometry_msgs::TransformStamped> tf_sub(nh_mergedmap, "/pub", 1);
+  message_filters::Subscriber<sensor_msgs::PointCloud2> pcl_sub(nh_mergedmap, "/carla/vehicle/086/lidar/front/point_cloud", 10);
+  message_filters::Subscriber<geometry_msgs::TransformStamped> tf_sub(nh_mergedmap, "/pub", 10);
   TimeSynchronizer<sensor_msgs::PointCloud2, geometry_msgs::TransformStamped> sync(pcl_sub, tf_sub, 10);
   sync.registerCallback(boost::bind(&callback, _1, _2));
 
