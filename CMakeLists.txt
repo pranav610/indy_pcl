@@ -248,4 +248,8 @@ add_definitions(${PCL_DEFINITIONS})
 target_link_libraries(noisy_data ${catkin_LIBRARIES})
 target_link_libraries (noisy_data ${PCL_LIBRARIES})
 
-
+add_executable (ICP_test src/ICP_test.cpp)
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
+target_link_libraries (ICP_test ${PCL_LIBRARIES})
+target_link_libraries (ICP_test ${catkin_LIBRARIES})

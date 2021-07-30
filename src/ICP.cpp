@@ -26,7 +26,7 @@
 
 using namespace message_filters;
 
-ros::Publisher vis;
+//ros::Publisher vis;
 
 typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
 PointCloud::Ptr merged(new PointCloud); //MergedMap_downsampled.pcd
@@ -36,13 +36,13 @@ Eigen::Quaternionf quat_prev;
 
 PointCloud::Ptr cloud(new PointCloud); //saving localized point cloud
 
-float resolution = 30.0f; //min voxel size for ict tree 
+float resolution = 30.0f; //min voxel size for ict tree
 pcl::octree::OctreePointCloudSearch<pcl::PointXYZ> octree(resolution);
 
 float radius = 30.0f;
 int count_callback = 0;
 //int count = 0;
-//int iterations = 10;
+//int iterations = 200;
 
 void Callback(const nav_msgs::Odometry::ConstPtr &odom, const sensor_msgs::PointCloud2::ConstPtr &pcl_msg, const geometry_msgs::TransformStamped::ConstPtr &tf_msg, const geometry_msgs::TransformStamped::ConstPtr &tf_msg_wrt)
 {
@@ -51,7 +51,7 @@ void Callback(const nav_msgs::Odometry::ConstPtr &odom, const sensor_msgs::Point
   geometry_msgs::Transform temp_tf;
   sensor_msgs::PointCloud2 msg;
 
-  if (count_callback == 1)
+  //if (count_callback == 1)
   {
     temp_tf.translation.x = odom->pose.pose.position.x + tf_msg_wrt->transform.translation.x;
     temp_tf.translation.y = odom->pose.pose.position.y + tf_msg_wrt->transform.translation.y;
@@ -62,9 +62,9 @@ void Callback(const nav_msgs::Odometry::ConstPtr &odom, const sensor_msgs::Point
     temp_tf.rotation.z = odom->pose.pose.orientation.z + tf_msg_wrt->transform.rotation.z;
     temp_tf.rotation.w = odom->pose.pose.orientation.w + tf_msg_wrt->transform.rotation.w;
 
-    ROS_INFO("%f %f %f",temp_tf.translation.x,temp_tf.translation.y,temp_tf.translation.z);
-    ROS_INFO("%f %f %f",odom->pose.pose.position.x, odom->pose.pose.position.y, odom->pose.pose.position.z);
-    ROS_INFO_STREAM(odom->header.stamp);
+    ROS_INFO("%f %f %f", temp_tf.translation.x, temp_tf.translation.y, temp_tf.translation.z);
+    //ROS_INFO("%f %f %f",odom->pose.pose.position.x, odom->pose.pose.position.y, odom->pose.pose.position.z);
+    //ROS_INFO_STREAM(odom->header.stamp);
 
     Eigen::Quaternionf quats_once;
     quats_once.x() = odom->pose.pose.orientation.x;
@@ -98,7 +98,7 @@ void Callback(const nav_msgs::Odometry::ConstPtr &odom, const sensor_msgs::Point
 
     ROS_INFO("Guess transformation is loaded using odom");
   }
-  else
+  /*else
   {
     temp_tf.translation.x = transformation_prev(0, 3);
     temp_tf.translation.y = transformation_prev(1, 3);
@@ -110,7 +110,7 @@ void Callback(const nav_msgs::Odometry::ConstPtr &odom, const sensor_msgs::Point
     temp_tf.rotation.w = quat_prev.w();
 
     ROS_INFO("Guess transformation is loaded using prev ICP output");
-  }
+  }*/
   pcl_ros::transformPointCloud("map", temp_tf, *pcl_msg, msg);
   PointCloud::Ptr temp_cloud(new PointCloud);
   pcl::fromROSMsg(msg, *temp_cloud);
@@ -149,29 +149,30 @@ void Callback(const nav_msgs::Odometry::ConstPtr &odom, const sensor_msgs::Point
   ROS_INFO("Local map extraction of %d point clouds.(Oct-Tree Done)", count_callback);
 
   pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
-  icp.setInputSource(cloud);
-  icp.setInputTarget(temp_cloud);
+  icp.setInputSource(temp_cloud);
+  icp.setInputTarget(merged);
+  icp.setMaxCorrespondenceDistance(1);
   //icp.setMaximumIterations(iterations);
   icp.align(Final);
   ROS_INFO("Has converged %d score. (ICP Done)", icp.hasConverged());
-
+  /*
   //rviz visualisation
   sensor_msgs::PointCloud2 temp_sensor;
   pcl::toROSMsg(Final, temp_sensor);
   temp_sensor.header.frame_id = "map";
   vis.publish(temp_sensor);
-  ROS_INFO("Publishing to Rviz Done");
+  ROS_INFO("Publishing to Rviz Done");*/
 
   Eigen::Matrix4f transformation = icp.getFinalTransformation();
   //transformation = transformation.inverse();
   Eigen::Matrix3f mat;   //rotation matrix
   Eigen::Vector3f trans; //translation vector
-  
+
   transformation_prev = (transformation_prev) * (transformation);
 
-  mat << transformation_prev(0,0), transformation_prev(0,1), transformation_prev(0,2),
-         transformation_prev(1,0), transformation_prev(1,1), transformation_prev(1,2),
-         transformation_prev(2,0), transformation_prev(2,1), transformation_prev(2,2);
+  mat << transformation_prev(0, 0), transformation_prev(0, 1), transformation_prev(0, 2),
+         transformation_prev(1, 0), transformation_prev(1, 1), transformation_prev(1, 2),
+         transformation_prev(2, 0), transformation_prev(2, 1), transformation_prev(2, 2);
 
   Eigen::Quaternionf quat_prev(mat); //rotation matrix stored as a quaternion
 
@@ -238,14 +239,14 @@ int main(int argc, char **argv)
 
   ros::NodeHandle nh_ICP;
 
-  vis = nh_ICP.advertise<sensor_msgs::PointCloud2>("/viscloud", 10);
+  //vis = nh_ICP.advertise<sensor_msgs::PointCloud2>("/viscloud", 1);
   message_filters::Subscriber<nav_msgs::Odometry> sub(nh_ICP, "/noisy_data/noise_added", 10);
   message_filters::Subscriber<sensor_msgs::PointCloud2> pcl_sub(nh_ICP, "/carla/vehicle/086/lidar/front/point_cloud", 10);
   message_filters::Subscriber<geometry_msgs::TransformStamped> tf_sub(nh_ICP, "/tf/lidar", 10);
   message_filters::Subscriber<geometry_msgs::TransformStamped> tf_sub_wrt(nh_ICP, "/tf/lidar/wrt/odom", 10);
   TimeSynchronizer<nav_msgs::Odometry, sensor_msgs::PointCloud2, geometry_msgs::TransformStamped, geometry_msgs::TransformStamped> sync(sub, pcl_sub, tf_sub, tf_sub_wrt, 10);
   ROS_INFO("Going into callback..");
-  sync.registerCallback(boost::bind(&Callback, _1, _2, _3,_4));
+  sync.registerCallback(boost::bind(&Callback, _1, _2, _3, _4));
 
   ros::spin();
   return 0;
