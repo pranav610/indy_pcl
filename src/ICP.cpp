@@ -44,23 +44,23 @@ int count_callback = 0;
 //int count = 0;
 //int iterations = 10;
 
-void Callback(const nav_msgs::Odometry::ConstPtr &odom, const sensor_msgs::PointCloud2::ConstPtr &pcl_msg, const geometry_msgs::TransformStamped::ConstPtr &tf_msg)
+void Callback(const nav_msgs::Odometry::ConstPtr &odom, const sensor_msgs::PointCloud2::ConstPtr &pcl_msg, const geometry_msgs::TransformStamped::ConstPtr &tf_msg, const geometry_msgs::TransformStamped::ConstPtr &tf_msg_wrt)
 {
   count_callback++;
   ROS_INFO("callback is running");
   geometry_msgs::Transform temp_tf;
   sensor_msgs::PointCloud2 msg;
 
-  //if (count_callback == 1)
+  if (count_callback == 1)
   {
-    temp_tf.translation.x = odom->pose.pose.position.x;
-    temp_tf.translation.y = odom->pose.pose.position.y;
-    temp_tf.translation.z = odom->pose.pose.position.z;
+    temp_tf.translation.x = odom->pose.pose.position.x + tf_msg_wrt->transform.translation.x;
+    temp_tf.translation.y = odom->pose.pose.position.y + tf_msg_wrt->transform.translation.y;
+    temp_tf.translation.z = odom->pose.pose.position.z + tf_msg_wrt->transform.translation.z;
 
-    temp_tf.rotation.x = odom->pose.pose.orientation.x;
-    temp_tf.rotation.y = odom->pose.pose.orientation.y;
-    temp_tf.rotation.z = odom->pose.pose.orientation.z;
-    temp_tf.rotation.w = odom->pose.pose.orientation.w;
+    temp_tf.rotation.x = odom->pose.pose.orientation.x + tf_msg_wrt->transform.rotation.x;
+    temp_tf.rotation.y = odom->pose.pose.orientation.y + tf_msg_wrt->transform.rotation.y;
+    temp_tf.rotation.z = odom->pose.pose.orientation.z + tf_msg_wrt->transform.rotation.z;
+    temp_tf.rotation.w = odom->pose.pose.orientation.w + tf_msg_wrt->transform.rotation.w;
 
     ROS_INFO("%f %f %f",temp_tf.translation.x,temp_tf.translation.y,temp_tf.translation.z);
     ROS_INFO("%f %f %f",odom->pose.pose.position.x, odom->pose.pose.position.y, odom->pose.pose.position.z);
@@ -72,7 +72,7 @@ void Callback(const nav_msgs::Odometry::ConstPtr &odom, const sensor_msgs::Point
     quats_once.z() = odom->pose.pose.orientation.z;
     quats_once.w() = odom->pose.pose.orientation.w;
 
-    Eigen::Matrix3f R_once = (quats_once.toRotationMatrix());
+    Eigen::Matrix3f R_once = ((quats_once.normalized()).toRotationMatrix());
 
     for (int i = 0; i < 4; i++)
     {
@@ -98,7 +98,7 @@ void Callback(const nav_msgs::Odometry::ConstPtr &odom, const sensor_msgs::Point
 
     ROS_INFO("Guess transformation is loaded using odom");
   }
-  /*else
+  else
   {
     temp_tf.translation.x = transformation_prev(0, 3);
     temp_tf.translation.y = transformation_prev(1, 3);
@@ -110,7 +110,7 @@ void Callback(const nav_msgs::Odometry::ConstPtr &odom, const sensor_msgs::Point
     temp_tf.rotation.w = quat_prev.w();
 
     ROS_INFO("Guess transformation is loaded using prev ICP output");
-  }*/
+  }
   pcl_ros::transformPointCloud("map", temp_tf, *pcl_msg, msg);
   PointCloud::Ptr temp_cloud(new PointCloud);
   pcl::fromROSMsg(msg, *temp_cloud);
@@ -191,7 +191,7 @@ void Callback(const nav_msgs::Odometry::ConstPtr &odom, const sensor_msgs::Point
   quats.z() = tf_msg->transform.rotation.z;
   quats.w() = tf_msg->transform.rotation.w;
 
-  Eigen::Matrix3f R = (quats.toRotationMatrix());
+  Eigen::Matrix3f R = ((quats.normalized()).toRotationMatrix());
 
   for (int i = 0; i < 4; i++)
   {
@@ -239,12 +239,13 @@ int main(int argc, char **argv)
   ros::NodeHandle nh_ICP;
 
   vis = nh_ICP.advertise<sensor_msgs::PointCloud2>("/viscloud", 10);
-  message_filters::Subscriber<nav_msgs::Odometry> sub(nh_ICP, "/carla/vehicle/086/odometry", 10);
+  message_filters::Subscriber<nav_msgs::Odometry> sub(nh_ICP, "/noisy_data/noise_added", 10);
   message_filters::Subscriber<sensor_msgs::PointCloud2> pcl_sub(nh_ICP, "/carla/vehicle/086/lidar/front/point_cloud", 10);
-  message_filters::Subscriber<geometry_msgs::TransformStamped> tf_sub(nh_ICP, "/pub", 10);
-  TimeSynchronizer<nav_msgs::Odometry, sensor_msgs::PointCloud2, geometry_msgs::TransformStamped> sync(sub, pcl_sub, tf_sub, 10);
+  message_filters::Subscriber<geometry_msgs::TransformStamped> tf_sub(nh_ICP, "/tf/lidar", 10);
+  message_filters::Subscriber<geometry_msgs::TransformStamped> tf_sub_wrt(nh_ICP, "/tf/lidar/wrt/odom", 10);
+  TimeSynchronizer<nav_msgs::Odometry, sensor_msgs::PointCloud2, geometry_msgs::TransformStamped, geometry_msgs::TransformStamped> sync(sub, pcl_sub, tf_sub, tf_sub_wrt, 10);
   ROS_INFO("Going into callback..");
-  sync.registerCallback(boost::bind(&Callback, _1, _2, _3));
+  sync.registerCallback(boost::bind(&Callback, _1, _2, _3,_4));
 
   ros::spin();
   return 0;

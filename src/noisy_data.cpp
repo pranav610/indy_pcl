@@ -9,7 +9,7 @@
 
 float mean_translational = 0;
 float mean_rotational = 0;
-float stddev_translational = 0.05;
+float stddev_translational = 0.50;
 float stddev_rotational = 0.08726642;
 
 ros::Publisher pub;
