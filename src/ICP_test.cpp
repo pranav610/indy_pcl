@@ -106,7 +106,7 @@ void Callback(const sensor_msgs::PointCloud2::ConstPtr &pcl_msg, const geometry_
   Eigen::Matrix3f mat;   //rotation matrix
   Eigen::Vector3f trans; //translation vector
 
-  transformation_prev = (transformation_prev) * (transformation);
+  transformation_prev = (transformation_prev) * (transformation) ;
 
   ROS_INFO("Overall Transformation Given By ICP is,");
   ROS_INFO("%f %f %f", transformation_prev(0, 3), transformation_prev(1, 3), transformation_prev(2, 3));

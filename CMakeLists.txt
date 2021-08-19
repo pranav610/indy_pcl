@@ -15,7 +15,6 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
-  sensor_msgs
   tf
   pcl_ros
   sensor_msgs
@@ -23,6 +22,9 @@ find_package(catkin REQUIRED COMPONENTS
   nav_msgs
   pcl_conversions
 )
+find_package(Eigen3 REQUIRED)
+find_package(Open3D REQUIRED)
+
 
 #find_package(PCL REQUIRED QUIET)
 
@@ -131,6 +133,8 @@ include_directories(
 # include
   ${catkin_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
+  ${EIGEN3_INCLUDE_DIR}
+  ${Open3D_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -253,3 +257,15 @@ link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 target_link_libraries (ICP_test ${PCL_LIBRARIES})
 target_link_libraries (ICP_test ${catkin_LIBRARIES})
+
+#add_executable (MultiScaleICP src/MultiScaleICP.cpp)
+#link_directories(${Open3D_LIBRARY_DIRS})
+#add_definitions(${Open3D_DEFINITIONS})
+#target_link_libraries(MultiScaleICP ${Open3D_LIBRARIES})
+#target_link_libraries (MultiScaleICP ${catkin_LIBRARIES})
+
+add_executable (ICP_loose src/ICP_loose.cpp)
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
+target_link_libraries (ICP_loose ${PCL_LIBRARIES})
+target_link_libraries (ICP_loose ${catkin_LIBRARIES})
