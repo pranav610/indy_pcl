@@ -118,6 +118,7 @@ void Callback(const nav_msgs::Odometry::ConstPtr &odom, const sensor_msgs::Point
   }*/
   pcl_ros::transformPointCloud("map", temp_tf, *pcl_msg, msg);
   PointCloud::Ptr temp_cloud(new PointCloud);
+  PointCloud::Ptr temp_cloud_local(new PointCloud);
   pcl::fromROSMsg(msg, *temp_cloud);
 
   ROS_INFO("Used guess transform.");
@@ -155,11 +156,13 @@ void Callback(const nav_msgs::Odometry::ConstPtr &odom, const sensor_msgs::Point
     }
   }
 
-  if (octree.radiusSearch(searchPoint, radius, pointIdxRadiusSearch, pointRadiusSquaredDistance) > 0)
+  std::vector<int> pointIdxRadiusSearch2;
+  std::vector<float> pointRadiusSquaredDistance2;  
+  if (octree2.radiusSearch(searchPoint, radius, pointIdxRadiusSearch2, pointRadiusSquaredDistance2) > 0)
   {
-    for (std::size_t i = 0; i < pointIdxRadiusSearch.size(); ++i)
+    for (std::size_t i = 0; i < pointIdxRadiusSearch2.size(); ++i)
     {
-      (*cloud).points.push_back((*merged)[pointIdxRadiusSearch[i]]);
+      (*temp_cloud_local).points.push_back((*temp_cloud)[pointIdxRadiusSearch2[i]]);
 
     }
   }
@@ -167,8 +170,8 @@ void Callback(const nav_msgs::Odometry::ConstPtr &odom, const sensor_msgs::Point
   ROS_INFO("Local map extraction of %d point clouds.(Oct-Tree Done)", count_callback);
 
   pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
-  icp.setInputSource(temp_cloud);
-  icp.setInputTarget(merged);
+  icp.setInputSource(temp_cloud_local);
+  icp.setInputTarget(cloud);
   icp.setMaxCorrespondenceDistance(1);
   //icp.setMaximumIterations(iterations);
   icp.align(Final);
