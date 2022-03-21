@@ -10,7 +10,7 @@ To perform localization in mapped enviroment first we need to create the map whi
 
 
 ## Local Map Extraction
-Given the Estimate of our location from the GPS data we need to create a local map around the estimate. This is done in ICP node.
+Given the Estimate of our location from the GPS data we need to create a local map around the estimate.We use octree point cloud search for this purpose . This is done in ICP node.
 
 <p float="left">
   <img src="images/octreesearch.png" alt="extracted" width="400"/>
