@@ -1,3 +1,11 @@
-# indy_pcl
+# Indy_LIME
+Implemented GPS Assisted Localization of high velocity autonomous car using LiDAR sensor.
 
-The src/indy_pcl.cpp file will subscribe to the topic /tf & /carla/vehicle/086/lidar/front/point_cloud, will use two call back functions to receive data from these two topics. The cpp file will use /tf topic messages to transform point clouds and merge point clouds in a single point cloud. After ros shutdown the single point cloud will be converted into Merged.pcd file.
+## Construction of Map
+To perform localization in mapped enviroment first we need to create the map which is done using the merged map node.
+
+## Local Map Extraction
+Given the Estimate of our location from the GPS data we need to create a local map around the estimate. This is done in ICP node.
+
+## ICP Implementation
+After extracting the local map we need to apply the ICP algorithm between the local point cloud and the current liDAR scan. This gives us the transformation between the estimate localtion(from GPS) and the acutal position. This is done in the ICP node.
